@@ -1,5 +1,3 @@
-{-# LANGUAGE OverloadedLists #-}
-
 module Day2.Solution where
 
 import Data.List (sort)
