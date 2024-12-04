@@ -21,7 +21,6 @@ input = do
 
 -- note: left is y, right is x
 type Position = (Int, Int)
-type WithPos a = (Int, a)
 
 (!!?) :: Matrix a -> Position -> Maybe a
 matrix !!? (y, x) = (matrix !? y) >>= (!? x)
@@ -32,7 +31,6 @@ check matr start move = do
     'M' <- matr !!? move start
     'A' <- matr !!? (move . move) start
     'S' <- matr !!? (move . move . move) start
-    pure ()
 
 checkPositions :: Matrix Char -> Position -> [Maybe ()]
 checkPositions matr start =
@@ -50,9 +48,6 @@ checkPositions matr start =
 
 countXmas :: Matrix Char -> Position -> Int
 countXmas matr start = length . catMaybes $ checkPositions matr start
-
--- arrIdxMap :: i -> (i -> a -> b) -> Arr.Array i a -> Arr.Array i b
--- arrIdxMap acc fn arr = foldr
 
 type Stateful s a = StateT s IO a
 
