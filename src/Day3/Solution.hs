@@ -56,13 +56,32 @@ solution = do
 -- >>> solution
 -- 165225049
 
-parseDont :: Parser ()
-parseDont = void $ string "don't()"
+input' :: IO String
+input' = readFile' fileName
 
-parseDo :: Parser ()
-parseDo = void $ string "do()"
+inputFiltered :: IO String
+inputFiltered = fmap onDo input'
+  where
+    onDo :: String -> String
+    onDo = \case
+        ('d' : 'o' : 'n' : '\'' : 't' : '(' : ')' : tl) -> onDont tl
+        x : tl -> x : onDo tl
+        [] -> []
+    onDont :: String -> String
+    onDont = \case
+        ('d' : 'o' : '(' : ')' : tl) -> onDo tl
+        _ : tl -> onDont tl
+        [] -> []
 
-data Ignored = Ignored
+solution' :: IO Integer
+solution' = do
+    inputText <- Text.pack <$> inputFiltered
+    let parsed = parse parser "" inputText
+    let instructions = case parsed of
+            Left _ -> undefined
+            Right ok -> ok
+    print instructions
+    pure $ sum $ fmap evaluate instructions
 
-ignored :: Parser Ignored
-ignored = (parseDont *> noise `manyTill` parseDo) $> Ignored
+-- >>> solution'
+-- 108830766
