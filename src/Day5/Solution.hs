@@ -1,12 +1,13 @@
 module Day5.Solution where
 
-import Control.Monad (forM_)
+import Control.Monad (forM_, guard)
 import Control.Monad.State.Strict (MonadState (get), evalState, execState, modify)
+import Data.IntMap ((!?))
 import Data.IntMap qualified as Map
 import Data.IntMap.Strict (IntMap)
 import Data.IntSet (IntSet, (\\))
 import Data.IntSet qualified as Set
-import Data.List (elemIndex)
+import Data.List (elemIndex, sortBy)
 import Data.Maybe (fromJust, fromMaybe)
 import Data.Text (Text)
 import Data.Text qualified as Text
@@ -99,3 +100,26 @@ solution = sum . fmap getMiddleElt <$> validPrints
 
 -- >>> solution
 -- 5248
+
+invalidPrints :: IO Pages
+invalidPrints = do
+    rs <- rules
+    filter (not . isPrintValid rs) <$> pages
+
+sortPrints :: Rules -> IO Pages
+sortPrints rs = fmap (sortBy $ flip sorter) <$> invalidPrints
+  where
+    sorter :: Int -> Int -> Ordering
+    sorter l r = fromMaybe EQ $ do
+        greater <- rs !? l
+        guard (r `Set.member` greater)
+        pure GT
+
+sortedPrints :: IO Pages
+sortedPrints = rules >>= sortPrints
+
+solution' :: IO Int
+solution' = sum . fmap getMiddleElt <$> sortedPrints
+
+-- >>> solution'
+-- 4507
