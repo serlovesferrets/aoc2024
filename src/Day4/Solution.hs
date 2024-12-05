@@ -31,6 +31,7 @@ check matr start move = do
     'M' <- matr !!? move start
     'A' <- matr !!? (move . move) start
     'S' <- matr !!? (move . move . move) start
+    pure ()
 
 checkPositions :: Matrix Char -> Position -> [Maybe ()]
 checkPositions matr start =
