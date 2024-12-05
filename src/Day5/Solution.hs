@@ -34,13 +34,13 @@ rawPages = removeEmptySpaces . tail . snd <$> input
 type Rules = IntMap IntSet
 
 parsePrecedence :: Text -> (Int, Int)
-parsePrecedence str =
-    let (left, right) = split str
-     in (read @Int $ Text.unpack left, read @Int $ Text.unpack right)
+parsePrecedence str = both (read @Int . Text.unpack) (left, right)
   where
     split rule =
         let parts = Text.splitOn "|" rule
          in (head parts, head $ tail parts)
+    (left, right) = split str
+    both fn (a, b) = (fn a, fn b)
 
 parsePrecedences :: [Text] -> Rules
 parsePrecedences parts =
@@ -67,7 +67,6 @@ pages = do
     let numListsStrs = Text.splitOn "," <$> rawPagesStrs
         numPages = do
             numList <- numListsStrs
-
             pure $ read @Int . Text.unpack <$> numList
     pure numPages
 
