@@ -1,13 +1,19 @@
 module Day3.Solution where
 
-import Control.Monad (void)
-import Data.Functor (($>))
 import Data.Text (Text)
 import Data.Text qualified as Text
 import Data.Void (Void)
 import System.IO (readFile')
-import Text.Megaparsec
-import Text.Megaparsec.Char
+import Text.Megaparsec (
+    MonadParsec (notFollowedBy, try),
+    Parsec,
+    manyTill,
+    parse,
+    skipManyTill,
+    some,
+    (<|>),
+ )
+import Text.Megaparsec.Char (char, digitChar, printChar, string)
 
 fileName :: String
 fileName = "src/Day3/input.txt"

@@ -3,29 +3,20 @@ module Day4.Solution where
 import Control.Applicative ((<|>))
 import Control.Monad (forM_)
 import Control.Monad.State (MonadIO (liftIO), StateT, execStateT, modify)
-import Data.Array qualified as Arr
-import Data.Array.Base ((!), (!?))
+import Data.Array.Base ((!))
 import Data.Maybe (catMaybes, isJust)
 import GHC.Base (when)
-import System.IO (readFile')
+import Shared.Matrix (Matrix)
+import qualified Shared.Matrix as Matrix
+import Shared.Matrix.Operators
 
 fileName :: String
 fileName = "src/Day4/input.txt"
 
-type Array = Arr.Array Int
-type Matrix a = Array (Array a)
-
 input :: IO (Matrix Char)
-input = do
-    fileContents <- lines <$> readFile' fileName
-    let linesArray = Arr.listArray (0, length fileContents - 1) fileContents
-    pure $ fmap (\line -> Arr.listArray (0, length line - 1) line) linesArray
+input = Matrix.readAsChars fileName
 
--- note: left is y, right is x
 type Position = (Int, Int)
-
-(!!?) :: Matrix a -> Position -> Maybe a
-matrix !!? (y, x) = (matrix !? y) >>= (!? x)
 
 check :: Matrix Char -> Position -> (Position -> Position) -> Maybe ()
 check matr start move = do
