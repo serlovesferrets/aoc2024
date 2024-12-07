@@ -6,7 +6,6 @@ import Data.Either (fromRight)
 import Data.Maybe (isJust)
 import Data.Text qualified as Text
 import Data.Text.Read (decimal)
-import Debug.Trace (trace)
 import System.IO (readFile')
 
 filePath :: String
@@ -55,36 +54,3 @@ solution = do
 
 -- >>> solution
 -- 2437272016585
-
-data Operator' = Plus' | Times' | Concat deriving (Show)
-
-solve' :: Integer -> [Integer] -> Maybe [Operator']
-solve' target nums = go target (reverse nums)
-  where
-    go = \cases
-        _ [] -> pure []
-        state [x] -> (plus state x <|> times state x) <|> conct state x
-        state (currDigit : rest) ->
-            (Plus' :) <$> go (state - currDigit) rest
-                <|> (Times' :) <$> (if state `mod` currDigit == 0 then go (state `div` currDigit) rest else Nothing)
-                <|> (Concat :) <$> do
-                    let num = read @Integer $ show currDigit <> show (head rest)
-                    go num (tail rest)
-
-    plus n a = if n - a == 0 then pure [Plus'] else Nothing
-    times n a = if n `mod` a == 0 && n `div` a == 1 then pure [Times'] else Nothing
-
-
-    conct n a | trace (show n <> " || " <> show a <> " ~= " <> show target <> " (" <> (show n <> show a) <> ")") False = undefined
-    conct n a = if (show n <> show a) == show target then pure [Concat] else Nothing
-
-solution' :: IO Integer
-solution' = do
-    equations <- input
-    pure . sum $ do
-        (testValue, nums) <- equations
-        guard (isJust $ solve' testValue nums)
-        pure testValue
-
--- >>> solution'
--- 193518
