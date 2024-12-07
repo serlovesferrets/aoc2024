@@ -32,6 +32,7 @@ library
     Day4.Solution
     Day5.Solution
     Day6.Solution
+    Day7.Solution
 
   default-extensions:
     LambdaCase
