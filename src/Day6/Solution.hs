@@ -1,6 +1,7 @@
 module Day6.Solution where
 
-import Control.Monad.State.Strict (MonadState (get, put), MonadTrans (lift), State, StateT, execState, execStateT, modify)
+import Control.Monad (when)
+import Control.Monad.State.Strict (MonadState (get, put), MonadTrans (lift), State, StateT, evalState, execState, execStateT, modify, runState)
 import Data.Maybe (fromMaybe)
 import Data.Set (Set)
 import Data.Set qualified as Set
@@ -81,8 +82,8 @@ peekNext matrix gs = fromMaybe Outside $ do
 type VisitedPositions = Set Position
 type RoamState a = StateT GuardState (State VisitedPositions) a
 
-loop :: Matrix Char -> GuardState -> Int
-loop matrix gs = Set.size $ execState (execStateT go gs) Set.empty
+cycleGuard :: Matrix Char -> GuardState -> Int
+cycleGuard matrix gs = Set.size $ execState (execStateT go gs) Set.empty
   where
     go :: RoamState ()
     go = do
@@ -105,48 +106,65 @@ solution :: IO Int
 solution = do
     (pos, dir) <- guardPosition
     board <- input
-    pure $ loop board (GuardState pos dir 0)
+    pure $ cycleGuard board (GuardState pos dir 0)
 
 -- >>> solution
 -- 5067
 
-type BlockPositionData = Set (Position, Direction)
-type RoamState' a = StateT GuardState (State BlockPositionData) a
-
-findBlockPositions :: Matrix Char -> GuardState -> BlockPositionData
-findBlockPositions matrix gs = execState (execStateT go gs) Set.empty
+isLoop :: Matrix Char -> GuardState -> Bool
+isLoop matrix gs = evalState go gs
   where
-    go :: RoamState' ()
+    start = (_position gs, _direction gs)
+    go :: State GuardState Bool
     go = do
-        guard <- get @GuardState
-        let nextPosition = getNextPosition guard
+        guard <- get
+        let currentPosition = (_position guard, _direction guard)
         case peekNext matrix guard of
-            Outside -> pure ()
-            Empty -> do modify moveGuard; go
+            Outside -> pure False
+            Empty -> do
+                if currentPosition == start then pure True else go
             Obstacle -> do
-                lift . modify $ Set.insert (nextPosition, _direction guard)
                 modify turnGuard
                 go
 
+type RoamState' a = StateT GuardState (State Int) a
+
+-- findBlockPositions :: Matrix Char -> GuardState -> BlockPositionData
+-- findBlockPositions matrix gs = execState (execStateT go gs) Set.empty
+--   where
+--     go :: RoamState' ()
+--     go = do
+--         guard <- get @GuardState
+--         let nextPosition = getNextPosition guard
+--         case peekNext matrix guard of
+--             Outside -> pure ()
+--             Empty -> do modify moveGuard; go
+--             Obstacle -> do
+--                 lift . modify $ Set.insert (nextPosition, _direction guard)
+--                 modify turnGuard
+-- go
+
 -- >>> input >>= \m -> rawGuard >>= \g -> pure $ findBlockPositions m g
+-- Variable not in scope:
+--   findBlockPositions :: Matrix Char -> GuardState -> b_a2cJ8[sk:1]
 
-closestTurnObstacle :: Matrix Char -> GuardState -> Maybe (Position, Direction)
-closestTurnObstacle matrix gs = go (_position gs)
+cycleGuard' :: Matrix Char -> GuardState -> Int
+cycleGuard' matrix gs = execState (execStateT go gs) 0
   where
-    dir = turnSquare $ _direction gs
-    go pos = do
-        cell <- parseChar <$> matrix !!? pos
-        case cell of
-            Obstacle -> pure (pos, dir)
-            Empty -> go (move pos dir)
-            Outside -> Nothing
+    increment :: RoamState' ()
+    increment = lift . modify $ (+ 1)
 
-guardPositionOfBump :: Position -> Direction -> Position
-guardPositionOfBump (y, x) = \case
-    Up -> (y + 1, x)
-    Rt -> (y, x - 1)
-    Dn -> (y - 1, x)
-    Lt -> (y, x + 1)
+    go :: RoamState' ()
+    go = do
+        guard <- get @GuardState
+        -- let nextPosition = getNextPosition guard
+        case peekNext matrix guard of
+            Outside -> pure ()
+            Empty -> do
+                when (isLoop matrix $ turnGuard guard) increment
+                modify moveGuard
+                go
+            Obstacle -> do modify turnGuard; go
 
-guardPositionOfBump' :: (Position, Direction) -> Position
-guardPositionOfBump' = uncurry guardPositionOfBump
+-- >>> input >>= \m -> rawGuard >>= \g -> pure $ cycleGuard' m g
+-- 5067
